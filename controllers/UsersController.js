@@ -32,8 +32,8 @@ class UsersController {
       const result = await UsersCollection.insertOne(newUser);
 
       return res.status(201).json({
-        email: newUser.email,
         id: result.insertedId,
+        email: newUser.email,
       });
     } catch (error) {
       return res.status(500).json({ error: `Internal Server Error${error}` });
