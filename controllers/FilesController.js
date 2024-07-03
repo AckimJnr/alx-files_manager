@@ -170,6 +170,98 @@ class FilesController {
       return res.status(500).json({ error: `Internal Server Error: ${error}` });
     }
   }
+
+  static async putPublish(req, res) {
+    const token = req.headers['x-token'];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const key = `auth_${token}`;
+
+    try {
+      const userId = await redisClient.get(key);
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const fileId = req.params.id;
+      const FilesCollection = mongoDb.client.db().collection('files');
+      const file = await FilesCollection.findOne({
+        _id: new mongodb.ObjectId(fileId),
+        userId: new mongodb.ObjectId(userId),
+      });
+
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      await FilesCollection.updateOne(
+        { _id: new mongodb.ObjectId(fileId) },
+        { $set: { isPublic: true } },
+      );
+
+      return res.status(200).json({
+        id: file._id,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: true,
+        parentId: file.parentId,
+        localPath: file.localPath,
+      });
+    } catch (error) {
+      return res.status(500).json({ error: `Internal Server Error: ${error}` });
+    }
+  }
+
+  static async putUnpublish(req, res) {
+    const token = req.headers['x-token'];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const key = `auth_${token}`;
+
+    try {
+      const userId = await redisClient.get(key);
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      const fileId = req.params.id;
+      const FilesCollection = mongoDb.client.db().collection('files');
+      const file = await FilesCollection.findOne({
+        _id: new mongodb.ObjectId(fileId),
+        userId: new mongodb.ObjectId(userId),
+      });
+
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      await FilesCollection.updateOne(
+        { _id: new mongodb.ObjectId(fileId) },
+        { $set: { isPublic: false } },
+      );
+
+      return res.status(200).json({
+        id: file._id,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: false,
+        parentId: file.parentId,
+        localPath: file.localPath,
+      });
+    } catch (error) {
+      return res.status(500).json({ error: `Internal Server Error: ${error}` });
+    }
+  }
 }
 
 module.exports = FilesController;
